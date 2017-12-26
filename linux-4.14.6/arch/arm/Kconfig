@@ -643,6 +643,12 @@ config ARCH_OMAP1
 	help
 	  Support for older TI OMAP1 (omap7xx, omap15xx or omap16xx)
 
+config ARCH_NEXELL
+	bool "Nexell's ARM SOC"
+	select GENERIC_CLOCKEVENTS
+	help
+	  Nexell arm based systems
+
 endchoice
 
 menu "Multiple platform selection"
@@ -855,6 +861,11 @@ source "arch/arm/mach-w90x900/Kconfig"
 source "arch/arm/mach-zx/Kconfig"
 
 source "arch/arm/mach-zynq/Kconfig"
+
+if ARCH_NEXELL
+source "arch/arm/plat-nexell/Kconfig"
+source "arch/arm/mach-nxp2120/Kconfig"
+endif
 
 # ARMv7-M architecture
 config ARCH_EFM32

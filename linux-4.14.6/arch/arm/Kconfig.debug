@@ -1349,6 +1349,15 @@ choice
 		  options; the platform specific options are deprecated
 		  and will be soon removed.
 
+	config DEBUG_NEXELL_UART
+		depends on PLAT_NEXELL
+		int "NEXELL UART to use for low-level debug"
+		default "0"
+		help
+		  Choice for UART for kernel low-level using NEXELL UARTS,
+		  should be between zero and one. The port must have been
+		  initialised by the boot-loader before use.
+
 endchoice
 
 config DEBUG_AT91_UART

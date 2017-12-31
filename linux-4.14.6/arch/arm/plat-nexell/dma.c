@@ -21,6 +21,7 @@
 #include <linux/init.h>
 #include <linux/types.h>
 #include <linux/delay.h>
+#include <linux/slab.h>
 
 /* 	Note>
  *	to enable assert, must be efine "PB_DEBUG"
@@ -304,16 +305,16 @@ int soc_dma_transfer(struct dma_trans *tr)
 
 	switch (tr->tr_type) {
 	case DMA_TRANS_MEM2IO:
-		NX_DMA_TransferMemToIO(ch, (const void*)tr->srcbase, tr->dstbase,
-					tr->dst_id, tr->dst_bit, tr->length);
+		NX_DMA_TransferMemToIO(ch, (const void*)tr->mtoi.srcbase, tr->mtoi.dstbase,
+					tr->mtoi.dst_id, tr->mtoi.dst_bit, tr->mtoi.length);
 		break;
 	case DMA_TRANS_IO2MEM:
-		NX_DMA_TransferIOToMem(ch, tr->srcbase, tr->src_id, tr->src_bit,
-					(void*)tr->dstbase, tr->length);
+		NX_DMA_TransferIOToMem(ch, tr->itom.srcbase, tr->itom.src_id, tr->itom.src_bit,
+					(void*)tr->itom.dstbase, tr->itom.length);
 		break;
 	case DMA_TRANS_MEM2MEM:
-		NX_DMA_TransferMemToMem(ch, (const void*)tr->srcbase, (void*)tr->dstbase,
-					tr->length);
+		NX_DMA_TransferMemToMem(ch, (const void*)tr->mtom.srcbase, (void*)tr->mtom.dstbase,
+					tr->mtom.length);
 	default:
 		ret = -2;
 		break;

@@ -28,7 +28,7 @@
 
 #include <asm/io.h>
 #include <asm/irq.h>
-#include <asm/system.h>
+#include <asm/system_info.h>
 
 #include <asm/mach/time.h>
 #include <asm/mach/irq.h>
@@ -57,7 +57,7 @@ static struct timer_data evt_timer;
 /*--------------------------------------------------------------------------
  * Timer clock source
  */
-static void timer_source_resume(void)
+static void timer_source_resume(struct clocksource *cs)
 {
 	int    ch 	  = src_timer.ch;
 	u_int  clksrc = src_timer.clksrc;
@@ -93,7 +93,8 @@ static void timer_source_resume(void)
 	PM_DBGOUT("-%s\n", __func__);
 }
 
-static cycle_t timer_source_read(struct clocksource *cs)
+//static cycle_t timer_source_read(struct clocksource *cs)
+static u64 timer_source_read(struct clocksource *cs)
 {
 	int ch = src_timer.ch;
 	return NX_TIMER_GetTimerCounter(ch);
@@ -131,8 +132,9 @@ static int __init timer_source_init(int ch, u_int clksrc, u_int clkdiv, u_int fr
 	NX_TIMER_ClearInterruptPendingAll(ch);
 
 	/* register timer source */
-	timer_clocksource.mult = clocksource_hz2mult(freq, timer_clocksource.shift);
-	clocksource_register(&timer_clocksource);
+	//timer_clocksource.mult = clocksource_hz2mult(freq, timer_clocksource.shift);
+	//clocksource_register(&timer_clocksource);
+	clocksource_register_hz(&timer_clocksource, freq * 1000);
 
 	/* source timer run */
 	NX_TIMER_SetTimerCounter(ch, 0x00000000);
@@ -185,7 +187,7 @@ static void clock_event_resume(void)
 	PM_DBGOUT("-%s\n", __func__);
 }
 
-static void timer_event_set_mode(enum clock_event_mode mode, struct clock_event_device *clk)
+/*static void timer_event_set_mode(enum clock_event_mode mode, struct clock_event_device *clk)
 {
 	int   ch 	 = evt_timer.ch;
 	u_int period = evt_timer.period;
@@ -219,6 +221,60 @@ static void timer_event_set_mode(enum clock_event_mode mode, struct clock_event_
 	}
 
 	raw_local_irq_restore(flags);
+}*/
+
+static int timer_event_set_shutdown(struct clock_event_device *clk)
+{
+	int   ch 	 = evt_timer.ch;
+	u_int period = evt_timer.period;
+	unsigned long flags;
+
+	DBGOUT("%s (ch:%d, mode:0x%x, period:%d)\n", __func__, ch, mode, period);
+
+	raw_local_irq_save(flags);
+
+	clock_event_shutdown();
+
+	raw_local_irq_restore(flags);
+
+	return 0;
+}
+
+static int timer_event_set_resume(struct clock_event_device *clk)
+{
+	int   ch 	 = evt_timer.ch;
+	u_int period = evt_timer.period;
+	unsigned long flags;
+
+	DBGOUT("%s (ch:%d, mode:0x%x, period:%d)\n", __func__, ch, mode, period);
+
+	raw_local_irq_save(flags);
+
+	clock_event_resume();
+
+	raw_local_irq_restore(flags);
+
+	return 0;
+}
+
+static int timer_event_set_periodic(struct clock_event_device *clk)
+{
+	int   ch 	 = evt_timer.ch;
+	u_int period = evt_timer.period;
+	unsigned long flags;
+
+	DBGOUT("%s (ch:%d, mode:0x%x, period:%d)\n", __func__, ch, mode, period);
+
+	raw_local_irq_save(flags);
+
+	NX_TIMER_Stop(ch);
+	NX_TIMER_SetTimerCounter(ch, 0);
+	NX_TIMER_SetMatchCounter(ch, period);
+	NX_TIMER_Run(ch);
+
+	raw_local_irq_restore(flags);
+
+	return 0;
 }
 
 static int timer_event_set_next_event(unsigned long evt, struct clock_event_device *unused)
@@ -243,7 +299,10 @@ static struct clock_event_device timer_clockevent =	 {
 	.name			= "timer_event",
 	.shift			= 32,
 	.features       = CLOCK_EVT_FEAT_PERIODIC | CLOCK_EVT_FEAT_ONESHOT,
-	.set_mode		= timer_event_set_mode,
+	//.set_mode		= timer_event_set_mode,
+	.set_state_shutdown	= timer_event_set_shutdown,
+	.tick_resume	= timer_event_set_resume,
+	.set_state_periodic	= timer_event_set_periodic,
 	.set_next_event	= timer_event_set_next_event,
 	.rating			= 300,
 };
@@ -263,7 +322,8 @@ static irqreturn_t timer_irq_handler(int irq, void *dev_id)
 
 static struct irqaction timer_irqaction = {
 	.name		= "Nexell Timer Tick",
-	.flags		= IRQF_DISABLED | IRQF_TIMER,
+	//.flags		= IRQF_DISABLED | IRQF_TIMER,
+	.flags		= IRQF_TIMER,
 	.handler	= timer_irq_handler,
 };
 
@@ -310,7 +370,8 @@ static int __init timer_event_init(int ch, u_int clksrc, u_int clkdiv, u_int fre
 /*--------------------------------------------------------------------------
  * 	register timer init function
  */
-static void __init cpu_timer_init(void)
+//static void __init cpu_timer_init(void)
+void __init cpu_timer_init(void)
 {
 	DBGOUT("%s\n", __func__);
 
@@ -331,7 +392,7 @@ static void __init cpu_timer_init(void)
 	return;
 }
 
-struct sys_timer cpu_sys_timer = {
-	.init		= cpu_timer_init,
-};
+//struct sys_timer cpu_sys_timer = {
+//	.init		= cpu_timer_init,
+//};
 

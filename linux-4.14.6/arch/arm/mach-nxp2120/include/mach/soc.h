@@ -68,7 +68,8 @@ struct dma_trans {
 			unsigned int dst_id;
 			unsigned int dst_bit;
 			unsigned int length;
-		};
+		//};
+		} mtoi;
 		/* io to memory */
 		struct {
 			unsigned int srcbase;
@@ -76,13 +77,15 @@ struct dma_trans {
 			unsigned int src_id;
 			unsigned int src_bit;
 			unsigned int length;
-		};
+		//};
+		} itom;
 		/* memory to memory */
 		struct {
 			unsigned int srcbase;
 			unsigned int dstbase;
 			unsigned int length;
-		};
+		//};
+		} mtom;
 	};
 };
 

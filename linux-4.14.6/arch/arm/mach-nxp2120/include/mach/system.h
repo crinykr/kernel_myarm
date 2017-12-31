@@ -196,7 +196,7 @@ static inline void uart1_set_termios(void)
 	UART_WAIT_READY;
 }
 
-static inline void arch_halt()
+static inline void arch_halt(void)
 {
     struct NX_UART_RegisterSet *uart;
 	char	notify[] = "GOODBYE";

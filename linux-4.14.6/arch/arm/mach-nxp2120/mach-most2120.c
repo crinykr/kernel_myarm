@@ -23,6 +23,7 @@
 #include <linux/init.h>
 #include <linux/types.h>
 #include <linux/platform_device.h>
+#include <linux/memblock.h>
 
 #include <asm/setup.h>
 #include <asm/mach-types.h>
@@ -536,7 +537,7 @@ void cpu_base_init(void)
  * 	procedure: fixup -> map_io -> init_irq -> timer init -> init_machine
  */
 static void __init cpu_fixup(
-	struct machine_desc *desc, struct tag *tags, char **cmdline, struct meminfo *mi
+	struct tag *tags, char **cmdline
 	)
 {
 	DBGOUT("%s\n", __func__);
@@ -544,10 +545,12 @@ static void __init cpu_fixup(
 	/*
 	 * system momory  = system_size + linear_size
 	 */
-    mi->nr_banks     	= 1;
-	mi->bank[0].start 	= CFG_MEM_PHY_SYSTEM_BASE;
-    mi->bank[0].size	= CFG_MEM_PHY_SYSTEM_SIZE; // + CFG_MEM_PHY_LINEAR_SIZE;
-    mi->bank[0].node  	= 0;
+	//mi->nr_banks     	= 1;
+	//mi->bank[0].start 	= CFG_MEM_PHY_SYSTEM_BASE;
+	//mi->bank[0].size	= CFG_MEM_PHY_SYSTEM_SIZE; // + CFG_MEM_PHY_LINEAR_SIZE;
+	//mi->bank[0].node  	= 0;
+
+	memblock_add(CFG_MEM_PHY_SYSTEM_BASE, CFG_MEM_PHY_SYSTEM_SIZE);
 }
 
 static void __init cpu_map_io(void)
@@ -599,14 +602,17 @@ static void __init cpu_init_machine(void)
 /*------------------------------------------------------------------------------
  * Maintainer: STCube Co., Ltd.
  */
+extern void __init cpu_timer_init(void);
 
 MACHINE_START(NXP2120, CFG_SYS_CPU_NAME)
- 	.phys_io		=  (__PB_IO_MAP_REGS_PHYS),
-	.io_pg_offst	=  (__PB_IO_MAP_REGS_VIRT >> 18) & 0xfffc,
-	.boot_params	=  CFG_MEM_PHY_SYSTEM_BASE + 0x00000100,
+// 	.phys_io		=  (__PB_IO_MAP_REGS_PHYS),
+//	.io_pg_offst	=  (__PB_IO_MAP_REGS_VIRT >> 18) & 0xfffc,
+//	.boot_params	=  CFG_MEM_PHY_SYSTEM_BASE + 0x00000100,
+	.atag_offset  = 0x100,
 	.fixup			=  cpu_fixup,
 	.map_io			=  cpu_map_io,
 	.init_irq		=  cpu_init_irq,
-	.timer			= &cpu_sys_timer,
+//	.timer			= &cpu_sys_timer,
+	.init_time = cpu_timer_init,
 	.init_machine	=  cpu_init_machine,
 MACHINE_END

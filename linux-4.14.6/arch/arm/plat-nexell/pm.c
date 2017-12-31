@@ -24,9 +24,10 @@
 #include <linux/delay.h>
 #include <linux/bootmem.h>
 
+#include <mach/memory.h>
 #include <mach/hardware.h>
 #include <asm/memory.h>
-#include <asm/system.h>
+#include <asm/system_info.h>
 #include <asm/io.h>
 
 #if defined(CONFIG_PM)
@@ -48,7 +49,8 @@
 #define	SLEEP_MM_SIZE 	PAGE_SIZE
 
 unsigned int sleep_phys_base = CFG_SLEEP_DATA_BASE;
-unsigned int sleep_virt_base = __phys_to_virt(CFG_SLEEP_DATA_BASE);
+//unsigned int sleep_virt_base = __phys_to_virt(CFG_SLEEP_DATA_BASE);
+unsigned int sleep_virt_base = CFG_SLEEP_DATA_BASE - PHYS_OFFSET + PAGE_OFFSET;
 unsigned int sleep_save_base = 0;
 unsigned int sleep_save_data[PAGE_SIZE] = { 0, };
 

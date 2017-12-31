@@ -25,7 +25,8 @@
 
 #include <asm/io.h>
 #include <asm/irq.h>
-#include <asm/system.h>
+//#include <asm/system.h>
+#include <asm/system_info.h>
 
 #include <asm/mach/irq.h>
 
@@ -108,8 +109,10 @@ inline static int	soc_int_get_pend(int num)
 }
 
 /*------------------------------------------------------------------------*/
-static void cpu_irq_enable(unsigned int irqno)
+static void cpu_irq_enable(struct irq_data *data)
 {
+	unsigned int irqno = data->irq;
+
 	IRQ_DBGOUT("enable(%d)\n", irqno);
 #if (1)
 	NX_INTC_ClearInterruptPending(irqno);
@@ -122,8 +125,10 @@ static void cpu_irq_enable(unsigned int irqno)
 #endif
 }
 
-static void cpu_irq_disable(unsigned int irqno)
+static void cpu_irq_disable(struct irq_data *data)
 {
+	unsigned int irqno = data->irq;
+
 	IRQ_DBGOUT("disable(%d)\n", irqno);
 #if (1)
 	NX_INTC_ClearInterruptPending(irqno);
@@ -137,8 +142,10 @@ static void cpu_irq_disable(unsigned int irqno)
 }
 
 /* disable irq: set mask bit & clear irq pend bit */
-static void cpu_irq_mask_ack(unsigned int irqno)
+static void cpu_irq_mask_ack(struct irq_data *data)
 {
+	unsigned int irqno = data->irq;
+
 	IRQ_DBGOUT("mask_ack(%d)\n", irqno);
 #if (1)
 	NX_INTC_ClearInterruptPending(irqno);
@@ -152,8 +159,10 @@ static void cpu_irq_mask_ack(unsigned int irqno)
 }
 
 /* enable irq: set unmask bit & clear irq pend bit */
-static void cpu_irq_unmask(unsigned int irqno)
+static void cpu_irq_unmask(struct irq_data *data)
 {
+	unsigned int irqno = data->irq;
+
 	IRQ_DBGOUT("unmask(%d)\n", irqno);
 #if (1)
 	NX_INTC_ClearInterruptPending(irqno);
@@ -169,10 +178,10 @@ static void cpu_irq_unmask(unsigned int irqno)
 /* interrupt controller irq control */
 static struct irq_chip cpu_irq_chip = {
 	.name		= "IRQ",
-	.enable		= cpu_irq_enable,
-	.disable	= cpu_irq_disable,
-	.mask_ack	= cpu_irq_mask_ack,
-	.unmask		= cpu_irq_unmask,
+	.irq_enable		= cpu_irq_enable,
+	.irq_disable	= cpu_irq_disable,
+	.irq_mask_ack	= cpu_irq_mask_ack,
+	.irq_unmask		= cpu_irq_unmask,
 };
 
 void __init cpu_init_irq(void)
@@ -190,9 +199,11 @@ void __init cpu_init_irq(void)
 		case IRQ_PHY_ALIVE: alive_init_irq();
 			break;
 		default:
-			set_irq_chip(i, &cpu_irq_chip);
-			set_irq_handler(i, handle_level_irq);
-			set_irq_flags(i, IRQF_VALID);
+			//set_irq_chip(i, &cpu_irq_chip);
+			//set_irq_handler(i, handle_level_irq);
+			//set_irq_flags(i, IRQF_VALID);
+			irq_set_chip_and_handler(i, &cpu_irq_chip, handle_level_irq);
+			irq_clear_status_flags(i, IRQ_NOREQUEST);
 			break;
 		}
 	}
@@ -205,8 +216,10 @@ void __init cpu_init_irq(void)
  *  do IRQ -> gpio handler -> mask_ack -> handler -> unmask->  ...
  *  end    -> disable
  ----------------------------------------------------------------------------*/
-static void gpio_irq_enable(unsigned int irqno)
+static void gpio_irq_enable(struct irq_data *data)
 {
+	unsigned int irqno = data->irq;
+
 	int irq = IRQ_PHY_GPIO;
 	int mod = (irqno - IRQ_GPIO_START) >> 5;
 	int bit = (irqno - IRQ_GPIO_START) & 0x1F;
@@ -221,8 +234,10 @@ static void gpio_irq_enable(unsigned int irqno)
 	NX_INTC_GetInterruptPending(irq);				/* Guarantee that irq Pending is cleared */
 }
 
-static void gpio_irq_disable(unsigned int irqno)
+static void gpio_irq_disable(struct irq_data *data)
 {
+	unsigned int irqno = data->irq;
+
 	int irq = IRQ_PHY_GPIO;
 	int mod = (irqno - IRQ_GPIO_START) >> 5;
 	int bit = (irqno - IRQ_GPIO_START) & 0x1F;
@@ -238,8 +253,10 @@ static void gpio_irq_disable(unsigned int irqno)
 }
 
 /* disable irq: set mask bit & clear irq pend bit */
-static void gpio_irq_mask_ack(unsigned int irqno)
+static void gpio_irq_mask_ack(struct irq_data *data)
 {
+	unsigned int irqno = data->irq;
+
 	int irq = IRQ_PHY_GPIO;
 	int mod = (irqno - IRQ_GPIO_START) >> 5;
 	int bit = (irqno - IRQ_GPIO_START) & 0x1F;
@@ -255,8 +272,10 @@ static void gpio_irq_mask_ack(unsigned int irqno)
 }
 
 /* enable irq: set unmask bit & clear irq pend bit */
-static void gpio_irq_unmask(unsigned int irqno)
+static void gpio_irq_unmask(struct irq_data *data)
 {
+	unsigned int irqno = data->irq;
+
 	int irq = IRQ_PHY_GPIO;
 	int mod = (irqno - IRQ_GPIO_START) >> 5;
 	int bit = (irqno - IRQ_GPIO_START) & 0x1F;
@@ -280,8 +299,10 @@ static void gpio_irq_unmask(unsigned int irqno)
 #define NXP2120_IRQ_HIGH_LEVEL     1
 #define NXP2120_IRQ_FALLING_EDGE   2
 #define NXP2120_IRQ_RISING_EDGE    3
-static int gpio_irq_set_type(unsigned int irq, unsigned int type) 
+static int gpio_irq_set_type(struct irq_data *data, unsigned int type)
 {
+	unsigned int irq = data->irq;
+
 	int  mod = 0, bit = 0;
 	u32 newvalue = 0;
 
@@ -329,15 +350,17 @@ static int gpio_irq_set_type(unsigned int irq, unsigned int type)
 
 static struct irq_chip gpio_irq_chip = {
 	.name		= "Gpio IRQ",
-	.enable		= gpio_irq_enable,
-	.disable	= gpio_irq_disable,
-	.mask_ack	= gpio_irq_mask_ack,
-	.unmask		= gpio_irq_unmask,
-	.set_type	= gpio_irq_set_type,
+	.irq_enable		= gpio_irq_enable,
+	.irq_disable	= gpio_irq_disable,
+	.irq_mask_ack	= gpio_irq_mask_ack,
+	.irq_unmask		= gpio_irq_unmask,
+	.irq_set_type	= gpio_irq_set_type,
 };
 
-static void gpio_irq_handler(unsigned int irqno, struct irq_desc *desc)
+static void gpio_irq_handler(struct irq_desc *desc)
 {
+	unsigned int irqno = desc->irq_data.irq;
+
 	int  mod = 0, bit = 0, irqnum = 0;
 	int  ret = -1;
 	uint pnd =  0;
@@ -372,9 +395,11 @@ static void gpio_irq_handler(unsigned int irqno, struct irq_desc *desc)
 
 			/* disable shared irq when level detect */
 			if (!(detmod & 0x2))
-				irqdesc->action->flags |= IRQF_DISABLED;
+				//irqdesc->action->flags |= IRQF_DISABLED;
+				irqdesc->action->flags &= ~IRQF_SHARED;
 
-			desc_handle_irq(irqnum, irqdesc);
+			//desc_handle_irq(irqnum, irqdesc);
+			generic_handle_irq(irqnum);
 
 			irqdesc->action->flags = flags;
 		} else {
@@ -407,13 +432,16 @@ static void __init gpio_init_irq(void)
 	int i = 0, irq = IRQ_PHY_GPIO;;
 
 	/* regist physical gpio irq handler, shared irq handler*/
-	set_irq_chained_handler(irq, gpio_irq_handler);
+	//set_irq_chained_handler(irq, gpio_irq_handler);
+	irq_set_chained_handler(irq, gpio_irq_handler);
 
 	/* regist virtual gpio irq info */
 	for (i = IRQ_GPIO_START; IRQ_GPIO_END > i; i++) {
-		set_irq_chip(i, &gpio_irq_chip);
-		set_irq_handler(i, handle_level_irq);
-		set_irq_flags(i, IRQF_VALID);
+		//set_irq_chip(i, &gpio_irq_chip);
+		//set_irq_handler(i, handle_level_irq);
+		//set_irq_flags(i, IRQF_VALID);
+		irq_set_chip_and_handler(i, &gpio_irq_chip, handle_level_irq);
+		irq_clear_status_flags(i, IRQ_NOREQUEST);
 	}
 
 	NX_INTC_ClearInterruptPending(irq);
@@ -428,8 +456,10 @@ static void __init gpio_init_irq(void)
  *  do IRQ -> dma handler -> mask_ack -> handler -> unmask->  ...
  *  end    -> disable
  ----------------------------------------------------------------------------*/
-static void dma_irq_enable(unsigned int irqno)
+static void dma_irq_enable(struct irq_data *data)
 {
+	unsigned int irqno = data->irq;
+
 	int irq = IRQ_PHY_DMA;
 	int ch  = (irqno - IRQ_DMA_START);
 
@@ -443,8 +473,10 @@ static void dma_irq_enable(unsigned int irqno)
 	NX_INTC_GetInterruptPending(irq);			/* Guarantee that irq Pending is cleared */
 }
 
-static void dma_irq_disable(unsigned int irqno)
+static void dma_irq_disable(struct irq_data *data)
 {
+	unsigned int irqno = data->irq;
+
 	int irq = IRQ_PHY_DMA;
 	int ch  = (irqno - IRQ_DMA_START);
 
@@ -459,8 +491,10 @@ static void dma_irq_disable(unsigned int irqno)
 }
 
 /* disable irq: set mask bit & clear irq pend bit */
-static void dma_irq_mask_ack(unsigned int irqno)
+static void dma_irq_mask_ack(struct irq_data *data)
 {
+	unsigned int irqno = data->irq;
+
 	int irq = IRQ_PHY_DMA;
 	int ch  = (irqno - IRQ_DMA_START);
 
@@ -475,8 +509,10 @@ static void dma_irq_mask_ack(unsigned int irqno)
 }
 
 /* enable irq: set unmask bit & clear irq pend bit */
-static void dma_irq_unmask(unsigned int irqno)
+static void dma_irq_unmask(struct irq_data *data)
 {
+	unsigned int irqno = data->irq;
+
 	int irq = IRQ_PHY_DMA;
 	int ch  = (irqno - IRQ_DMA_START);
 
@@ -492,14 +528,15 @@ static void dma_irq_unmask(unsigned int irqno)
 
 static struct irq_chip dma_irq_chip = {
 	.name		= "DMA IRQ",
-	.enable		= dma_irq_enable,
-	.disable	= dma_irq_disable,
-	.mask_ack	= dma_irq_mask_ack,
-	.unmask		= dma_irq_unmask,
+	.irq_enable		= dma_irq_enable,
+	.irq_disable	= dma_irq_disable,
+	.irq_mask_ack	= dma_irq_mask_ack,
+	.irq_unmask		= dma_irq_unmask,
 };
 
-static void dma_irq_handler(unsigned int irqno, struct irq_desc *desc)
+static void dma_irq_handler(struct irq_desc *desc)
 {
+	unsigned int irqno = desc->irq_data.irq;
 	int  ch = 0, irqnum = 0;
 	int  ret = -1;
 
@@ -513,7 +550,8 @@ static void dma_irq_handler(unsigned int irqno, struct irq_desc *desc)
 			irqdesc = irq_desc + irqnum;
 
 			if (irqdesc && irqdesc->action)
-				desc_handle_irq(irqnum, irqdesc);
+				//desc_handle_irq(irqnum, irqdesc);
+				generic_handle_irq(irqnum);
 			else
 				printk(KERN_ERR "Error, unknow dma irq(%d) \n", irqno);
 
@@ -541,13 +579,16 @@ static void __init dma_init_irq(void)
 	int i = 0, irq = IRQ_PHY_DMA;
 
 	/* regist physical dma irq handler, shared irq handler*/
-	set_irq_chained_handler(irq, dma_irq_handler);
+	//set_irq_chained_handler(irq, dma_irq_handler);
+	irq_set_chained_handler(irq, dma_irq_handler);
 
 	/* regist virtual dma irq info */
 	for (i = IRQ_DMA_START; IRQ_DMA_END > i; i++) {
-		set_irq_chip(i, &dma_irq_chip);
-		set_irq_handler(i, handle_level_irq);
-		set_irq_flags(i, IRQF_VALID);
+		//set_irq_chip(i, &dma_irq_chip);
+		//set_irq_handler(i, handle_level_irq);
+		//set_irq_flags(i, IRQF_VALID);
+		irq_set_chip_and_handler(i, &dma_irq_chip, handle_level_irq);
+		irq_clear_status_flags(i, IRQ_NOREQUEST);
 	}
 
 	NX_INTC_ClearInterruptPending(irq);
@@ -561,8 +602,10 @@ static void __init dma_init_irq(void)
  *  do IRQ -> alive handler -> mask_ack -> handler -> unmask->  ...
  *  end    -> disable
  ----------------------------------------------------------------------------*/
-static void alive_irq_enable(unsigned int irqno)
+static void alive_irq_enable(struct irq_data *data)
 {
+	unsigned int irqno = data->irq;
+
 	int irq = IRQ_PHY_ALIVE;
 	int bit = (irqno - IRQ_ALIVE_START);
 
@@ -576,8 +619,10 @@ static void alive_irq_enable(unsigned int irqno)
 	NX_INTC_GetInterruptPending(irq);			/* Guarantee that irq Pending is cleared */
 }
 
-static void alive_irq_disable(unsigned int irqno)
+static void alive_irq_disable(struct irq_data *data)
 {
+	unsigned int irqno = data->irq;
+
 	int bit = (irqno - IRQ_ALIVE_START);
 	int irq = IRQ_PHY_ALIVE;
 
@@ -592,8 +637,10 @@ static void alive_irq_disable(unsigned int irqno)
 }
 
 /* disable irq: set mask bit & clear irq pend bit */
-static void alive_irq_mask_ack(unsigned int irqno)
+static void alive_irq_mask_ack(struct irq_data *data)
 {
+	unsigned int irqno = data->irq;
+
 	int irq = IRQ_PHY_ALIVE;
 	int bit = (irqno - IRQ_ALIVE_START);
 
@@ -608,8 +655,10 @@ static void alive_irq_mask_ack(unsigned int irqno)
 }
 
 /* enable irq: set unmask bit & clear irq pend bit */
-static void alive_irq_unmask(unsigned int irqno)
+static void alive_irq_unmask(struct irq_data *data)
 {
+	unsigned int irqno = data->irq;
+
 	int irq = IRQ_PHY_ALIVE;
 	int bit = (irqno - IRQ_ALIVE_START);
 
@@ -625,14 +674,15 @@ static void alive_irq_unmask(unsigned int irqno)
 
 static struct irq_chip alive_irq_chip = {
 	.name		= "Alive IRQ",
-	.enable		= alive_irq_enable,
-	.disable	= alive_irq_disable,
-	.mask_ack	= alive_irq_mask_ack,
-	.unmask		= alive_irq_unmask,
+	.irq_enable		= alive_irq_enable,
+	.irq_disable	= alive_irq_disable,
+	.irq_mask_ack	= alive_irq_mask_ack,
+	.irq_unmask		= alive_irq_unmask,
 };
 
-static void alive_irq_handler(unsigned int irqno, struct irq_desc *desc)
+static void alive_irq_handler(struct irq_desc *desc)
 {
+	unsigned int irqno = desc->irq_data.irq;
 	int  bit = 0, irqnum = 0;
 	int  ret = -1;
 
@@ -646,7 +696,8 @@ static void alive_irq_handler(unsigned int irqno, struct irq_desc *desc)
 		irqdesc = irq_desc + irqnum;
 
 		if (irqdesc && irqdesc->action)
-			desc_handle_irq(irqnum, irqdesc);
+			//desc_handle_irq(irqnum, irqdesc);
+			generic_handle_irq(irqnum);
 		else
 			printk(KERN_ERR "Error, unknow alive irq(%d) \n", irqnum);
 
@@ -667,13 +718,16 @@ static void __init alive_init_irq(void)
 	int i = 0, irq = IRQ_PHY_ALIVE;
 
 	/* regist physical alive irq handler, shared irq handler*/
-	set_irq_chained_handler(irq, alive_irq_handler);
+	//set_irq_chained_handler(irq, alive_irq_handler);
+	irq_set_chained_handler(irq, alive_irq_handler);
 
 	/* regist virtual alive irq info */
 	for (i = IRQ_ALIVE_START; IRQ_ALIVE_END > i; i++) {
-		set_irq_chip	(i, &alive_irq_chip);
-		set_irq_handler	(i, handle_level_irq);
-		set_irq_flags	(i, IRQF_VALID);
+		//set_irq_chip	(i, &alive_irq_chip);
+		//set_irq_handler	(i, handle_level_irq);
+		//set_irq_flags	(i, IRQF_VALID);
+		irq_set_chip_and_handler(i, &alive_irq_chip, handle_level_irq);
+		irq_clear_status_flags(i, IRQ_NOREQUEST);
 	}
 
 	NX_INTC_ClearInterruptPending(irq);

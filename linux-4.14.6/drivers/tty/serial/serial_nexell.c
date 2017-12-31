@@ -967,7 +967,8 @@ static int nx_uart_ops_startup(struct uart_port *port)
 		uart->regs->INTCON = NXP2120_INTCON_RXENB;
     }
 #endif
-	ret = request_irq(port->irq, nx_uart_irq_handler, IRQF_DISABLED, UART_DEV_NAME, port);
+	//ret = request_irq(port->irq, nx_uart_irq_handler, IRQF_DISABLED, UART_DEV_NAME, port);
+	ret = request_irq(port->irq, nx_uart_irq_handler, 0, UART_DEV_NAME, port);
 	if ( ret!=0 ) {
 		dev_err(port->dev, "unable to grab irq%d\n",port->irq);
 		return ret;
@@ -1378,7 +1379,8 @@ static struct uart_ops nx_uart_ops = {
 static void nx_uart_rx_irq_handler(struct uart_port *port)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,32)
-	struct tty_struct *tty = port->state->port.tty;
+	//struct tty_struct *tty = port->state->port.tty;
+	struct tty_port *tty = &port->state->port;
 #else
 	struct tty_struct *tty = port->info->port.tty;
 #endif

@@ -192,11 +192,11 @@ void __init cpu_init_irq(void)
 	/* physical interrupt irq */
 	for (i = 0; IRQ_PHY_MAX_COUNT > i; i++) {
 		switch(i) {
-		case IRQ_PHY_GPIO:	gpio_init_irq();
+		case IRQ_PHY_GPIO /* 13 */:	gpio_init_irq();
 			break;
-		case IRQ_PHY_DMA:	dma_init_irq();
+		case IRQ_PHY_DMA /* 3 */:	dma_init_irq();
 			break;
-		case IRQ_PHY_ALIVE: alive_init_irq();
+		case IRQ_PHY_ALIVE /* 50 */: alive_init_irq();
 			break;
 		default:
 			//set_irq_chip(i, &cpu_irq_chip);
@@ -433,6 +433,7 @@ static void __init gpio_init_irq(void)
 
 	/* regist physical gpio irq handler, shared irq handler*/
 	//set_irq_chained_handler(irq, gpio_irq_handler);
+	irq_set_chip(irq, &dummy_irq_chip);
 	irq_set_chained_handler(irq, gpio_irq_handler);
 
 	/* regist virtual gpio irq info */
@@ -580,6 +581,7 @@ static void __init dma_init_irq(void)
 
 	/* regist physical dma irq handler, shared irq handler*/
 	//set_irq_chained_handler(irq, dma_irq_handler);
+	irq_set_chip(irq, &dummy_irq_chip);
 	irq_set_chained_handler(irq, dma_irq_handler);
 
 	/* regist virtual dma irq info */
@@ -719,6 +721,7 @@ static void __init alive_init_irq(void)
 
 	/* regist physical alive irq handler, shared irq handler*/
 	//set_irq_chained_handler(irq, alive_irq_handler);
+	irq_set_chip(irq, &dummy_irq_chip);
 	irq_set_chained_handler(irq, alive_irq_handler);
 
 	/* regist virtual alive irq info */

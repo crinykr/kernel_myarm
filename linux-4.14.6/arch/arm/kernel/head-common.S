@@ -11,6 +11,7 @@
  *
  */
 #include <asm/assembler.h>
+#include <asm/mydbg.h>
 
 #define ATAG_CORE 0x54410001
 #define ATAG_CORE_SIZE ((2*4 + 3*4) >> 2)
@@ -132,6 +133,20 @@ ENTRY(lookup_processor_type)
 	mov	r0, r5
 	ldmfd	sp!, {r4 - r6, r9, pc}
 ENDPROC(lookup_processor_type)
+
+ENTRY(cdbg_kputh)
+	mov r12, r0
+	adr r0, dbg
+	sub r0, r0, #0x40000000
+	mov pc, r0
+dbg:
+	mmuoff
+	kputc #'H'
+	kputc #'i'
+	kputc #':'
+	kputh r12
+	9999: b 9999b
+ENDPROC(cdbg_kputh)
 
 	__FINIT
 	.text

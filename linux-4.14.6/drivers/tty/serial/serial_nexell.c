@@ -271,7 +271,7 @@ static struct nx_uart_port nx_ports[] = {
 			.ops 		= &nx_uart_ops,
 			.line 		= 0,
 		},
-		.regs = (struct NX_UART_RegisterSet *)IO_ADDRESS(PHY_BASEADDR_UART0),
+		.regs = (struct NX_UART_RegisterSet *)IO_ADDRESS(PHY_BASEADDR_UART0), // printk use this (criny)
 		.dma_regs = (struct NX_DMA_RegisterSet *)IO_ADDRESS(PHY_BASEADDR_DMA_MODULE + (OFFSET_OF_DMA_MODULE * DMA_CHAN0_CHANNEL)),
 	},
 #endif

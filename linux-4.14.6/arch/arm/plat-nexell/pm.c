@@ -439,6 +439,7 @@ static struct platform_suspend_ops cpu_pm_ops = {
 /* register pm ops function */
 static int __init cpu_pm_init(void)
 {
+#if defined(CONFIG_PM_SLEEP)
 	u_int *addr = sleep_save_data;
 	DBGOUT("%s\n", __func__);
 
@@ -458,7 +459,7 @@ static int __init cpu_pm_init(void)
 	printk("CPU: sleep phys=0x%x to virt=0x%x, bk phys=0x%x, virt=0x%x\n",
 		sleep_phys_base, sleep_virt_base,
 		(u_int)__virt_to_phys(addr), sleep_save_base);
-
+#endif
 	return 0;
 }
 core_initcall(cpu_pm_init);

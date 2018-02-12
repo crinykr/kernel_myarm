@@ -359,6 +359,7 @@ __turn_mmu_on_loc:
 	.long	.
 	.long	__turn_mmu_on
 	.long	__turn_mmu_on_end
+//	.long	start_kernel
 
 #if defined(CONFIG_SMP)
 	.text

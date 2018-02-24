@@ -172,7 +172,7 @@ config MTD_NAND_NEXELL
 
 config MTD_NAND_NEXELL_PARTS_MAP
 	bool "Support NAND partition map file (cfg_nand_map.h)"
-	depends on MTD_NAND_NEXELL && MTD_PARTITIONS
+	depends on MTD_NAND_NEXELL
 	help
 	  Use NAND partition table header file (cfg_nand_map.h)
 

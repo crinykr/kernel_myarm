@@ -94,7 +94,8 @@
 #define CFG_NAND_AUTORESET             			CTRUE
 #define CFG_NAND_WRITEPROTECT					CFALSE
 
-#define	CFG_NAND_OPTIONS						NAND_NO_READRDY	/* For Hynix 64M (sector=16K, page=512) */
+//#define	CFG_NAND_OPTIONS						NAND_NO_READRDY	/* For Hynix 64M (sector=16K, page=512) */
+#define	CFG_NAND_OPTIONS						0	/* For Hynix 64M (sector=16K, page=512) */
 /*------------------------------------------------------------------------------
  * 	Display (DPC and MLC)
  */

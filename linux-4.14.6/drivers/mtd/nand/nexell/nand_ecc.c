@@ -30,7 +30,7 @@
 #include <platform.h>
 #else
 #include <linux/kernel.h>
-#include <linux/mtd/nand.h>
+#include <linux/mtd/rawnand.h>
 #include <mach/platform.h>
 #include <asm/io.h>
 #endif

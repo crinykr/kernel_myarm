@@ -21,7 +21,7 @@
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/mtd/mtd.h>
-#include <linux/mtd/nand.h>
+#include <linux/mtd/rawnand.h>
 #include <linux/mtd/partitions.h>
 #include <asm/io.h>
 #include <asm/sizes.h>
@@ -30,6 +30,8 @@
 /* nexell soc headers */
 #include <mach/platform.h>
 #include <mach/devices.h>
+
+#include "../../../mtd/mtdcore.h"
 
 #if	(0)
 #define DBGOUT(msg...)		{ printk(KERN_INFO "nand: " msg); }
@@ -55,6 +57,7 @@
 #include <asm/traps.h>
 #include <asm/unwind.h>
 
+#define CONFIG_MTD_PARTITIONS // criny : force configure
 /*------------------------------------------------------------------------------
  * nand partition
  */
@@ -90,7 +93,8 @@ static void nand_dev_select(struct mtd_info *mtd, int chipnr)
 {
 	DBGOUT("%s, chipnr=%d\n", __func__, chipnr);
 #if defined(CFG_NAND_OPTIONS)
-	struct nand_chip *chip = mtd->priv;
+	//struct nand_chip *chip = mtd->priv;
+	struct nand_chip *chip = mtd_to_nand(mtd);
 	chip->options |= CFG_NAND_OPTIONS;
 #endif
 
@@ -112,7 +116,8 @@ static void nand_dev_select(struct mtd_info *mtd, int chipnr)
 
 static void nand_dev_ctrl(struct mtd_info *mtd, int cmd, unsigned int ctrl)
 {
-	struct nand_chip *chip = mtd->priv;
+	//struct nand_chip *chip = mtd->priv;
+	struct nand_chip *chip = mtd_to_nand(mtd);
 	void __iomem* addr = chip->IO_ADDR_W;
 	int ret = 0;
 
@@ -139,7 +144,8 @@ static int nand_dev_ready(struct mtd_info *mtd)
 
 static void nand_dev_read_buf(struct mtd_info *mtd, uint8_t *buf, int len)
 {
-	struct nand_chip *chip = mtd->priv;
+	//struct nand_chip *chip = mtd->priv;
+	struct nand_chip *chip = mtd_to_nand(mtd);
 	readsl(chip->IO_ADDR_R, buf, (len >> 2));
 	if (len & 3)
 		readsb(chip->IO_ADDR_R, buf + (len & ~0x3), (len & 3));
@@ -147,7 +153,8 @@ static void nand_dev_read_buf(struct mtd_info *mtd, uint8_t *buf, int len)
 
 static void nand_dev_write_buf(struct mtd_info *mtd, const uint8_t *buf, int len)
 {
-	struct nand_chip *chip = mtd->priv;
+	//struct nand_chip *chip = mtd->priv;
+	struct nand_chip *chip = mtd_to_nand(mtd);
 	writesl(chip->IO_ADDR_W, buf, (len >> 2));
 	if (len & 3)
 		writesb(chip->IO_ADDR_W, buf + (len & ~0x3), (len & 3));
@@ -187,6 +194,7 @@ static int nand_dev_init(struct nand_chip *chip)
 
 #if !defined (CONFIG_MTD_NAND_NEXELL_HWECC)
 	chip->ecc.mode = NAND_ECC_SOFT;
+	chip->ecc.algo = NAND_ECC_HAMMING;
 	printk(KERN_INFO "NAND ecc: Software \n");
 #else
 	ret = nand_hw_ecc_init(chip);
@@ -208,20 +216,23 @@ static int nand_dev_check(struct mtd_info *mtd)
 #define CONFIG_SYS_NAND_MAX_CHIPS   1
 #endif
 
-static struct mtd_info 	nand_info = { 0, };
+//static struct mtd_info 	nand_info = { 0, };
 static struct nand_chip nand_chip = { 0, };
 
 static int __init nand_drv_init(void)
 {
-	struct mtd_info 	* mtd  = &nand_info;
+	//struct mtd_info 	* mtd  = &nand_info;
+	struct mtd_info 	* mtd;
 	struct nand_chip 	* chip = &nand_chip;
-	struct mtd_partition* mtd_parts = NULL;
+	//struct mtd_partition* mtd_parts = NULL;
+	struct mtd_partitions mtd_parts = {0, };
 	int parts_nr = 0;
 	int maxchips = CONFIG_SYS_NAND_MAX_CHIPS;
 	int cmd_part = 1;
 
-	mtd->priv  = chip;
-	mtd->owner = THIS_MODULE;
+	//mtd->priv  = chip;
+	//mtd->owner = THIS_MODULE;
+	mtd = nand_to_mtd(chip);
 
 	printk(KERN_NOTICE "Searching NAND device ...\n");
 
@@ -235,17 +246,19 @@ static int __init nand_drv_init(void)
 		return -ENXIO;
 
 #if defined (CONFIG_MTD_PARTITIONS)
-	mtd->name = NAND_DEV_NAME;
-	parts_nr  = parse_mtd_partitions(mtd, part_probes, &mtd_parts, 0);
+	//mtd->name = NAND_DEV_NAME;
+	//parts_nr  = parse_mtd_partitions(mtd, part_probes, &mtd_parts, 0);
+	parts_nr  = parse_mtd_partitions(mtd, NULL, &mtd_parts, NULL);
 	if (0 >= parts_nr) {
 		cmd_part  = 0;
-		mtd_parts = partition_map;
+		//mtd_parts = partition_map;
 		parts_nr  = ARRAY_SIZE(partition_map);
 		def_mtd_parts(mtd, partition_map);
 	}
 
 	/* Register the partitions */
-	add_mtd_partitions(mtd, mtd_parts, parts_nr);
+	//add_mtd_partitions(mtd, mtd_parts, parts_nr);
+	add_mtd_partitions(mtd, partition_map, parts_nr);
 
 	printk(KERN_NOTICE "Using %s partition definition\n",
 		cmd_part?"command line":"static");
@@ -256,7 +269,8 @@ static int __init nand_drv_init(void)
 static void __exit nand_drv_exit(void)
 {
 #if defined (CONFIG_MTD_PARTITIONS)
-	struct mtd_info *mtd = &nand_info;
+	//struct mtd_info *mtd = &nand_info;
+	struct mtd_info *mtd = nand_to_mtd(&nand_chip);
 
 	/* Unregister the partitions */
 	del_mtd_device(mtd);

@@ -528,6 +528,11 @@ asmlinkage __visible void __init start_kernel(void)
 	page_address_init();
 	pr_notice("%s", linux_banner);
 	setup_arch(&command_line);
+
+	printk("kparam_before: %s", command_line);
+	command_line = "noinitrd console=ttyS0,115200 root=/dev/mtdblock2 rootfstype=ext4";
+	printk("kparam_after: %s", command_line);
+
 	/*
 	 * Set up the the initial canary and entropy after arch
 	 * and after adding latent and command line entropy.
